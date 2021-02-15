@@ -1,11 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class EnvironmentManager : MonoBehaviour
 {
     //General
     private Camera cam;
+
+    public GameObject score_ui;
+
+    //Score
+    public float score_per_second = 10;
+    private float score = 0;
 
     //Background
     public float border_speed = 6;
@@ -63,6 +70,9 @@ public class EnvironmentManager : MonoBehaviour
     private Vector3 obstacle_left_position = new Vector3(-3.45f, 7, 0);
     private Vector3 obstacle_right_position = new Vector3(3.45f, 7, 0);
 
+    public float first_branch_odds = 0.5f;
+    public float second_branch_odds = 0;
+
     private void Start()
     {
         //General
@@ -100,6 +110,9 @@ public class EnvironmentManager : MonoBehaviour
 
     private void FixedUpdate()
     {
+        score += Time.fixedDeltaTime * score_per_second;
+        score_ui.GetComponent<TextMeshProUGUI>().text = "Score " + Mathf.FloorToInt(score);
+
         //Mouvement du background et des bords
         bg1.transform.position -= new Vector3(0, background_speed * Time.fixedDeltaTime, 0);
         bg2.transform.position -= new Vector3(0, background_speed * Time.fixedDeltaTime, 0);
@@ -138,12 +151,12 @@ public class EnvironmentManager : MonoBehaviour
         if (obstacle_timer > obstacle_period)
         {
             obstacle_timer = 0;
-            if (Random.value < 0.5)
+            if (Random.value < first_branch_odds)
             {
                 GameObject deco1 = Instantiate(obstacle, obstacle_left_position, Quaternion.identity);
                 deco1.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
                 deco1.GetComponent<ObstacleBehaviour>().scrolling_speed = border_speed;
-                if (Random.value < 0.1)
+                if (Random.value < second_branch_odds)
                 {
                     GameObject deco2 = Instantiate(obstacle, obstacle_right_position, Quaternion.identity);
                     deco2.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
@@ -151,13 +164,13 @@ public class EnvironmentManager : MonoBehaviour
                     deco2.GetComponent<ObstacleBehaviour>().scrolling_speed = border_speed;
                 }
             }
-            else if (Random.value < 0.5)
+            else if (Random.value < first_branch_odds)
             {
                 GameObject deco1 = Instantiate(obstacle, obstacle_right_position, Quaternion.identity);
                 deco1.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
                 deco1.GetComponent<SpriteRenderer>().flipX = true;
                 deco1.GetComponent<ObstacleBehaviour>().scrolling_speed = border_speed;
-                if (Random.value < 0.1)
+                if (Random.value < second_branch_odds)
                 {
                     GameObject deco2 = Instantiate(obstacle, obstacle_left_position, Quaternion.identity);
                     deco2.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
@@ -184,6 +197,25 @@ public class EnvironmentManager : MonoBehaviour
                 deco.GetComponent<SpriteRenderer>().flipX = true;
                 deco.GetComponent<DecorationScrolling>().scrolling_speed = border_speed;
             }
+        }
+    }
+
+    private void UpdateDifficulty()
+    {
+        if (Mathf.FloorToInt(score) % 300 == 0)
+        {
+            border_speed *= 1.5f;
+        }
+        else if (Mathf.FloorToInt(score) % 500 == 0)
+        {
+            first_branch_odds *= 1.3f;
+        }
+        else if (Mathf.FloorToInt(score) % 1000 == 0)
+        {
+            if (second_branch_odds == 0)
+                second_branch_odds = 0.05f;
+            else
+                second_branch_odds *= 1.5f;
         }
     }
 }
