@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4265430805103133827}
   m_Layer: 0
   m_Name: decoration
-  m_TagString: Untagged
+  m_TagString: DecoBranch
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

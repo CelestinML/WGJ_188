@@ -15,7 +15,7 @@ public class EnvironmentManager : MonoBehaviour
     private float score = 0;
 
     //Background
-    public float border_speed = 6;
+    public float border_speed = 5;
     public float background_speed = 3;
 
     public GameObject bg1;
@@ -72,6 +72,10 @@ public class EnvironmentManager : MonoBehaviour
 
     public float first_branch_odds = 0.5f;
     public float second_branch_odds = 0;
+    private bool first_branch_boost_block = true;
+    private bool obstacle_period_boost_block = true;
+    private bool border_speed_boost_block = true;
+    private bool second_branch_boost_block = true;
 
     private void Start()
     {
@@ -113,6 +117,29 @@ public class EnvironmentManager : MonoBehaviour
         score += Time.fixedDeltaTime * score_per_second;
         score_ui.GetComponent<TextMeshProUGUI>().text = "Score " + Mathf.FloorToInt(score);
 
+        UpdateDifficulty();
+
+        UpdateBackground();
+
+        //Apparition d'obstacles
+        obstacle_timer += Time.fixedDeltaTime;
+        if (obstacle_timer > obstacle_period)
+        {
+            obstacle_timer = 0;
+            InstantiateObstacle();
+        }
+
+        //Apparition de décorations
+        decoration_timer += Time.fixedDeltaTime;
+        if (decoration_timer > decoration_period)
+        {
+            decoration_timer = 0;
+            InstantiateDecoration();
+        }
+    }
+
+    private void UpdateBackground()
+    {
         //Mouvement du background et des bords
         bg1.transform.position -= new Vector3(0, background_speed * Time.fixedDeltaTime, 0);
         bg2.transform.position -= new Vector3(0, background_speed * Time.fixedDeltaTime, 0);
@@ -145,13 +172,13 @@ public class EnvironmentManager : MonoBehaviour
             right_border2.transform.position = right_border2_base_position;
             right_border1.transform.position = right_border1_base_position;
         }
+    }
 
-        //Apparition d'obstacles
-        obstacle_timer += Time.fixedDeltaTime;
-        if (obstacle_timer > obstacle_period)
+    private void InstantiateObstacle()
+    {
+        if (Random.value < first_branch_odds)
         {
-            obstacle_timer = 0;
-            if (Random.value < first_branch_odds)
+            if (Random.value < 0.5)
             {
                 GameObject deco1 = Instantiate(obstacle, obstacle_left_position, Quaternion.identity);
                 deco1.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
@@ -164,7 +191,7 @@ public class EnvironmentManager : MonoBehaviour
                     deco2.GetComponent<ObstacleBehaviour>().scrolling_speed = border_speed;
                 }
             }
-            else if (Random.value < first_branch_odds)
+            else
             {
                 GameObject deco1 = Instantiate(obstacle, obstacle_right_position, Quaternion.identity);
                 deco1.GetComponent<SpriteRenderer>().sprite = obstacles[Mathf.FloorToInt(Random.value * obstacles.Count)];
@@ -178,44 +205,72 @@ public class EnvironmentManager : MonoBehaviour
                 }
             }
         }
+    }
 
-        //Apparition de décorations
-        decoration_timer += Time.fixedDeltaTime;
-        if (decoration_timer > decoration_period)
+    private void InstantiateDecoration()
+    {
+        if (Random.value < 0.5)
         {
-            decoration_timer = 0;
-            if (Random.value < 0.5)
-            {
-                GameObject deco = Instantiate(decoration, decoration_left_position, Quaternion.identity);
-                deco.GetComponent<SpriteRenderer>().sprite = decorations[Mathf.FloorToInt(Random.value * decorations.Count)];
-                deco.GetComponent<DecorationScrolling>().scrolling_speed = border_speed;
-            }
-            if (Random.value < 0.5)
-            {
-                GameObject deco = Instantiate(decoration, decoration_right_position, Quaternion.identity);
-                deco.GetComponent<SpriteRenderer>().sprite = decorations[Mathf.FloorToInt(Random.value * decorations.Count)];
-                deco.GetComponent<SpriteRenderer>().flipX = true;
-                deco.GetComponent<DecorationScrolling>().scrolling_speed = border_speed;
-            }
+            GameObject deco = Instantiate(decoration, decoration_left_position, Quaternion.identity);
+            deco.GetComponent<SpriteRenderer>().sprite = decorations[Mathf.FloorToInt(Random.value * decorations.Count)];
+            deco.GetComponent<DecorationScrolling>().scrolling_speed = border_speed;
+        }
+        if (Random.value < 0.5)
+        {
+            GameObject deco = Instantiate(decoration, decoration_right_position, Quaternion.identity);
+            deco.GetComponent<SpriteRenderer>().sprite = decorations[Mathf.FloorToInt(Random.value * decorations.Count)];
+            deco.GetComponent<SpriteRenderer>().flipX = true;
+            deco.GetComponent<DecorationScrolling>().scrolling_speed = border_speed;
         }
     }
 
     private void UpdateDifficulty()
     {
+        if (Mathf.FloorToInt(score) % 100 == 0)
+        {
+            if (!first_branch_boost_block)
+            {
+                first_branch_odds *= 1.3f;
+                first_branch_boost_block = true;
+            }
+        }
+        else if (first_branch_boost_block)
+            first_branch_boost_block = false;
+
+        if (Mathf.FloorToInt(score) % 200 == 0)
+        {
+            if (!obstacle_period_boost_block)
+            {
+                obstacle_period *= 0.8f;
+                obstacle_period_boost_block = true;
+            }
+        }
+        else if (obstacle_period_boost_block)
+            obstacle_period_boost_block = false;
+
         if (Mathf.FloorToInt(score) % 300 == 0)
         {
-            border_speed *= 1.5f;
+            if (!border_speed_boost_block)
+            {
+                border_speed += 1;
+                border_speed_boost_block = true;
+            }
         }
-        else if (Mathf.FloorToInt(score) % 500 == 0)
+        else if (border_speed_boost_block)
+            border_speed_boost_block = false;
+
+        if (Mathf.FloorToInt(score) % 600 == 0)
         {
-            first_branch_odds *= 1.3f;
+            if (!second_branch_boost_block)
+            {
+                second_branch_boost_block = true;
+                if (second_branch_odds == 0)
+                    second_branch_odds = 0.1f;
+                else
+                    second_branch_odds *= 1.5f;
+            }
         }
-        else if (Mathf.FloorToInt(score) % 1000 == 0)
-        {
-            if (second_branch_odds == 0)
-                second_branch_odds = 0.05f;
-            else
-                second_branch_odds *= 1.5f;
-        }
+        else if (second_branch_boost_block)
+            second_branch_boost_block = false;
     }
 }
